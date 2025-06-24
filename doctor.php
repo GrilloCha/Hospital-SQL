@@ -1,7 +1,7 @@
 <?php
 session_start();
 
-if (!isset($_SESSION['id_usuario']) || $_SESSION['tipo_usuario'] != 'doctor') {
+if (!isset($_SESSION['id_usuario']) || $_SESSION['rol_empleado'] != 'doctor') {
     echo "❌ Acceso denegado.";
     exit();
 }

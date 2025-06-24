@@ -2,7 +2,7 @@
 session_start();
 
 // Validar que el usuario esté logueado y sea tipo 'paciente'
-if (!isset($_SESSION['id_usuario']) || $_SESSION['tipo_usuario'] !== 'paciente') {
+if (!isset($_SESSION['id_usuario']) || $_SESSION['tipo_usuario'] !== 'Paciente') {
     echo "❌ Acceso denegado.";
     exit();
 }

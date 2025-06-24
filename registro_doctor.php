@@ -2,8 +2,8 @@
 session_start();
 include("conexion.php");
 
-if (!isset($_SESSION['tipo_usuario']) || $_SESSION['tipo_usuario'] != 1) {
-    echo "Acceso no autorizado.";
+if (!isset($_SESSION['id_usuario']) || $_SESSION['rol_empleado'] !=  'recepcionista') {
+    echo "❌ Acceso denegado.";
     exit();
 }
 

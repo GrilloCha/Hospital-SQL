@@ -155,6 +155,14 @@ unset($_SESSION['error']);
         .logout-btn:hover, .login-btn:hover {
             background: #27272a;
         }
+
+        body{
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            margin: 0;
+        }
+
     </style>
 </head>
 <body>
@@ -190,34 +198,37 @@ unset($_SESSION['error']);
         <?php if (!empty($error)): ?>
             <div class="error-message"><?= htmlspecialchars($error) ?></div>
         <?php endif; ?>
+        
+        <div class="inicio-sesion">
+            <form method="POST" action="procesar_login.php" novalidate>
+                <label for="correo">Correo Electrónico:</label>
+                <input
+                    type="email"
+                    id="correo"
+                    name="correo"
+                    required
+                    placeholder="ejemplo@hospital.com"
+                    value="<?= isset($_POST['correo']) ? htmlspecialchars($_POST['correo']) : '' ?>"
+                />
 
-        <form method="POST" action="procesar_login.php" novalidate>
-            <label for="correo">Correo Electrónico:</label>
-            <input
-                type="email"
-                id="correo"
-                name="correo"
-                required
-                placeholder="ejemplo@hospital.com"
-                value="<?= isset($_POST['correo']) ? htmlspecialchars($_POST['correo']) : '' ?>"
-            />
+                <label for="password">Contraseña:</label>
+                <input
+                    type="password"
+                    id="password"
+                    name="password"
+                    required
+                    placeholder="Ingrese su contraseña"
+                />
 
-            <label for="password">Contraseña:</label>
-            <input
-                type="password"
-                id="password"
-                name="password"
-                required
-                placeholder="Ingrese su contraseña"
-            />
-
-            <button type="submit" name="login">Iniciar Sesión</button>
-        </form>
-
-        <form method="POST" action="registro.php" style="margin-top: 1rem;">
-            <button type="submit" name="redireccionar">Registrarse</button>
+                <button type="submit" name="login">Iniciar Sesión</button>
+        </div>
         </form>
     <?php endif; ?>
+    <div class="cerrar-sesion">
+        <form method="POST" action="registro.php" style="margin-top: 1rem;">
+        <button type="submit" name="redireccionar">Registrarse</button>
+    </div>
+    </form>
 </body>
 
 </html>

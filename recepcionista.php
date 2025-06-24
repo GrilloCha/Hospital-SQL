@@ -1,6 +1,6 @@
 <?php
 session_start();
-if (!isset($_SESSION['usuario']) || $_SESSION['tipo_usuario'] != 1) {
+if (!isset($_SESSION['id_usuario']) || $_SESSION['rol_empleado'] !=  'recepcionista') {
     echo "❌ Acceso denegado.";
     exit();
 }
@@ -29,7 +29,9 @@ if ($empleado['idTipoEmpleado'] != 1) {
     <p>Aquí puedes registrar doctores y gestionar citas.</p>
 
     <a href="registro_doctor.php">Registrar un Doctor</a><br><br>
-
+    <a href="registrar_empleados.php">Registrar un empleado(No doctores)</a><br><br>
+    <a href="registro.php">Registrar un usuario</a><br><br>
+    
     <form action="logout.php" method="post">
         <button type="submit">Cerrar Sesión</button>
     </form>
