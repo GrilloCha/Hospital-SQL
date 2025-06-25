@@ -1,8 +1,7 @@
-
 <?php
 session_start();
 
-if (!isset($_SESSION['id_usuario']) || $_SESSION['tipo_usuario'] !== 'paciente') {
+if (!isset($_SESSION['id_usuario']) || $_SESSION['tipo_usuario'] !== 'Paciente') {
     echo "❌ Acceso denegado.";
     exit();
 }
@@ -56,7 +55,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['idEspecialidad'], $_P
             } elseif ($fechaHoraCita > (clone $hoy)->add(new DateInterval('P3M'))) {
                 $error = "La cita no puede ser agendada con más de 3 meses de anticipación.";
             } else {
-                $diaSemana = $fechaHoraCita->format('dddd'); // Para SQL Server puede requerir formato exacto de día
+                $diaSemana = $fechaHoraCita->format('dddd');
 
                 $sqlHorario = "
                     SELECT 1 FROM JornadaLaboral JL
@@ -76,7 +75,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['idEspecialidad'], $_P
                     if (sqlsrv_fetch_array($stmtOcupado)) {
                         $error = "El doctor ya tiene una cita en esa fecha y hora.";
                     } else {
+                        // Iniciar transacción
                         sqlsrv_begin_transaction($conn);
+                        
+                        // Obtener el idEmpleado del doctor para la bitácora
+                        $sqlEmpleado = "SELECT idEmpleado FROM Doctor WHERE idDoctor = ?";
+                        $stmtEmpleado = sqlsrv_query($conn, $sqlEmpleado, [$idDoctor]);
+                        $idEmpleado = null;
+                        if ($rowEmpleado = sqlsrv_fetch_array($stmtEmpleado, SQLSRV_FETCH_ASSOC)) {
+                            $idEmpleado = $rowEmpleado['idEmpleado'];
+                        }
+                        
+                        // Insertar la cita
                         $sqlInsert = "INSERT INTO Cita (idDoctor, idPaciente, fechaCita, estatusCita, horaCita) VALUES (?, ?, ?, ?, ?)";
                         $paramsInsert = [$idDoctor, $idPaciente, $fechaHoraCita->format('Y-m-d'), 'Pendiente', $fechaHoraCita->format('H:i:s')];
                         $stmtInsert = sqlsrv_query($conn, $sqlInsert, $paramsInsert);
@@ -87,14 +97,47 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['idEspecialidad'], $_P
                             $errorMsg = $errors ? $errors[0]['message'] : 'Error desconocido al guardar la cita.';
                             $error = "Error al guardar la cita: " . htmlspecialchars($errorMsg);
                         } else {
-                            sqlsrv_commit($conn);
-                            $success = "✅ Cita agendada correctamente para el " . $fechaHoraCita->format('Y-m-d H:i');
+                            // Obtener el folioCita recién insertado
+                            $sqlFolio = "SELECT SCOPE_IDENTITY() as folioCita";
+                            $stmtFolio = sqlsrv_query($conn, $sqlFolio);
+                            $folioCita = null;
+                            if ($rowFolio = sqlsrv_fetch_array($stmtFolio, SQLSRV_FETCH_ASSOC)) {
+                                $folioCita = $rowFolio['folioCita'];
+                            }
+                            
+                            // Insertar en la bitácora
+                            if ($folioCita && $idEmpleado) {
+                                $sqlBitacora = "INSERT INTO Bitacora (idPaciente, idEmpleado, folioCita, fechaCita) VALUES (?, ?, ?, ?)";
+                                $paramsBitacora = [$idPaciente, $idEmpleado, $folioCita, $fechaHoraCita->format('Y-m-d H:i:s')];
+                                $stmtBitacora = sqlsrv_query($conn, $sqlBitacora, $paramsBitacora);
+                                
+                                if ($stmtBitacora === false) {
+                                    sqlsrv_rollback($conn);
+                                    $errors = sqlsrv_errors();
+                                    $errorMsg = $errors ? $errors[0]['message'] : 'Error desconocido al guardar en bitácora.';
+                                    $error = "Error al guardar en bitácora: " . htmlspecialchars($errorMsg);
+                                } else {
+                                    sqlsrv_commit($conn);
+                                    $success = "✅ Cita agendada correctamente para el " . $fechaHoraCita->format('Y-m-d H:i');
+                                }
+                            } else {
+                                sqlsrv_rollback($conn);
+                                $error = "Error al obtener información necesaria para la bitácora.";
+                            }
                         }
                     }
                 }
             }
         }
     }
+}
+
+// Cargar especialidades para el formulario
+$sqlEspecialidades = "SELECT idEspecialidad, nombreEspecialidad FROM Especialidad ORDER BY nombreEspecialidad";
+$stmtEspecialidades = sqlsrv_query($conn, $sqlEspecialidades);
+$especialidades = [];
+while ($row = sqlsrv_fetch_array($stmtEspecialidades, SQLSRV_FETCH_ASSOC)) {
+    $especialidades[] = $row;
 }
 ?>
 <!DOCTYPE html>

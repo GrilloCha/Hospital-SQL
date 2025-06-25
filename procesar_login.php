@@ -48,6 +48,11 @@ if ($_POST && isset($_POST['login'])) {
         exit();
     }
     $usuario = sqlsrv_fetch_array($stmt, SQLSRV_FETCH_ASSOC);
+    
+    // DEBUGGING - Ver qué datos estamos obteniendo
+    error_log("Datos del usuario obtenidos:");
+    error_log(print_r($usuario, true));
+    
     // Validar contraseña
     if ($usuario && $usuario['contrasenaLogin'] === $password) {
         $_SESSION['id_usuario'] = $usuario['idUsuario'];
@@ -62,9 +67,24 @@ if ($_POST && isset($_POST['login'])) {
         
         // Si es empleado, guardar también sus datos
         if (!empty($usuario['idEmpleado'])) {
-            $_SESSION['empleado_id'] = $usuario['idEmpleado'];
-            $_SESSION['rol_empleado'] = strtolower($usuario['rolEmpleado']); // Convertir a minúsculas
-            error_log("Rol guardado en sesión: " . $_SESSION['rol_empleado']);
+            error_log("Empleado encontrado - ID: " . $usuario['idEmpleado']);
+            if (!empty($usuario['rolEmpleado'])) {
+                $_SESSION['empleado_id'] = $usuario['idEmpleado'];
+                $_SESSION['rol_empleado'] = strtolower($usuario['rolEmpleado']); // Convertir a minúsculas
+                error_log("Rol guardado en sesión: " . $_SESSION['rol_empleado']);
+            } else {
+                error_log("rolEmpleado está vacío o es NULL");
+                $_SESSION['error'] = "No se pudo determinar el rol del empleado.";
+                header("Location: login.php");
+                exit();
+            }
+        } else {
+            error_log("idEmpleado está vacío o es NULL: " . ($usuario['idEmpleado'] ?? 'NULL'));
+            if ($usuario['tipoUsuario'] === 'Empleado') {
+                $_SESSION['error'] = "Usuario marcado como empleado pero sin datos de empleado en la base de datos.";
+                header("Location: login.php");
+                exit();
+            }
         }
         
         // Cerrar conexión antes de redireccionar

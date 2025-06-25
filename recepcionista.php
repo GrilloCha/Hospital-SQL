@@ -31,6 +31,7 @@ if ($empleado['idTipoEmpleado'] != 1) {
     <a href="registro_doctor.php">Registrar un Doctor</a><br><br>
     <a href="registrar_empleados.php">Registrar un empleado(No doctores)</a><br><br>
     <a href="registro.php">Registrar un usuario</a><br><br>
+    <a href="generar_ticket.php">Generar ticket de compra</a>
     
     <form action="logout.php" method="post">
         <button type="submit">Cerrar Sesión</button>
